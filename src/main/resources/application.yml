@@ -1,0 +1,41 @@
+cos:
+  resource-host: http://127.0.0.1:8080
+  # MinIO配置
+  minio:
+    # 是否启动
+    enable: false
+    # 服务地址
+    endpoint: http://127.0.0.1:9000
+    # 资源文件地址前缀
+    resource-host: http://127.0.0.1:9000
+    # AccessKey ID
+    access-key-id: ""
+    # AccessKey Secret
+    access-key-secret: ""
+    # 全局前缀
+    object-dir-prefix: ""
+    # 存储桶名称
+    bucket: data
+    provider: minio
+    expire: 3600
+    region: en-beijing-1
+    role-arn:
+  oss:
+    # 是否启动
+    enable: false
+    # 服务地址
+    endpoint: ""
+    # 资源文件地址前缀
+    resource-host: ""
+    # AccessKey ID
+    access-key-id: ""
+    # AccessKey Secret
+    access-key-secret: ""
+    # 全局前缀
+    object-dir-prefix: ""
+    # 存储桶名称
+    bucket: data
+    provider: ali
+    expire: 3600
+    region: us-east-1
+    role-arn:
