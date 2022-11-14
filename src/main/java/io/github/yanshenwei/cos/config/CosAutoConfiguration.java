@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
  **********************************/
 
 @Configuration
-@ComponentScan("com.tyjw.cos")
+@ComponentScan("io.github.yanshenwei.cos")
 @EnableConfigurationProperties(CosConstants.class)
 public class CosAutoConfiguration {
 }
