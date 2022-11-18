@@ -6,7 +6,7 @@
     <groupId>io.github.yanshenwei</groupId>
     <artifactId>cos-spring-boot-starter</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
     <name>cos-spring-boot-starter</name>
     <url>https://github.com/yanshenwei/cos-spring-boot-starter</url>
     <description>

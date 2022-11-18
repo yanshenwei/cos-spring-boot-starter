@@ -76,17 +76,18 @@ public class AliossModel implements ObjectCloudStorage {
     @Override
     public boolean putObject(String objectPath, File file) {
         OSS oss = getOss();
-        if (!oss.doesObjectExist(bucket, objectPrefix + objectPath)) {
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, objectPrefix + objectPath, file);
+        String path = getFormatObjectPath(objectPath);
+        if (!oss.doesObjectExist(bucket, path)) {
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, path, file);
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setHeader(OSSHeaders.CONTENT_TYPE, "application/octet-stream");
             putObjectRequest.setMetadata(metadata);
             oss.putObject(putObjectRequest);
             oss.shutdown();
-            log.debug("对象 [" + objectPrefix + objectPath + "] 上传成功");
+            log.debug("对象 [" + path + "] 上传成功");
             return true;
         } else {
-            log.error("对象 [" + objectPrefix + objectPath + "] 已存在");
+            log.error("对象 [" + path + "] 已存在");
             oss.shutdown();
             return false;
         }
@@ -95,8 +96,9 @@ public class AliossModel implements ObjectCloudStorage {
     @Override
     public boolean putObject(String objectPath, InputStream inputStream, String contentType) {
         OSS oss = getOss();
-        if (!oss.doesObjectExist(bucket, objectPrefix + objectPath)) {
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, objectPrefix + objectPath, inputStream);
+        String path = getFormatObjectPath(objectPath);
+        if (!oss.doesObjectExist(bucket, path)) {
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, path, inputStream);
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setHeader(OSSHeaders.CONTENT_TYPE, contentType == null ? "application/octet-stream" : contentType);
             putObjectRequest.setMetadata(metadata);
@@ -104,7 +106,7 @@ public class AliossModel implements ObjectCloudStorage {
             oss.shutdown();
             return true;
         } else {
-            log.error("对象 [" + objectPrefix + objectPath + "] 已存在");
+            log.error("对象 [" + path + "] 已存在");
             oss.shutdown();
             return false;
         }
@@ -113,8 +115,9 @@ public class AliossModel implements ObjectCloudStorage {
     @Override
     public boolean putObject(String objectPath, byte[] content) {
         OSS oss = getOss();
-        if (!oss.doesObjectExist(bucket, objectPrefix + objectPath)) {
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, objectPrefix + objectPath, new ByteArrayInputStream(content));
+        String path = getFormatObjectPath(objectPath);
+        if (!oss.doesObjectExist(bucket, path)) {
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, path, new ByteArrayInputStream(content));
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setHeader(OSSHeaders.CONTENT_TYPE, "application/octet-stream");
             putObjectRequest.setMetadata(metadata);
@@ -122,7 +125,7 @@ public class AliossModel implements ObjectCloudStorage {
             oss.shutdown();
             return true;
         } else {
-            log.error("对象 [" + objectPrefix + objectPath + "] 已存在");
+            log.error("对象 [" + path + "] 已存在");
             oss.shutdown();
             return false;
         }
@@ -131,8 +134,9 @@ public class AliossModel implements ObjectCloudStorage {
     @Override
     public boolean putObject(String objectPath, byte[] content, String contentType) {
         OSS oss = getOss();
-        if (!oss.doesObjectExist(bucket, objectPrefix + objectPath)) {
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, objectPrefix + objectPath, new ByteArrayInputStream(content));
+        String path = getFormatObjectPath(objectPath);
+        if (!oss.doesObjectExist(bucket, path)) {
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, path, new ByteArrayInputStream(content));
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setHeader(OSSHeaders.CONTENT_TYPE, contentType);
             putObjectRequest.setMetadata(metadata);
@@ -140,7 +144,7 @@ public class AliossModel implements ObjectCloudStorage {
             oss.shutdown();
             return true;
         } else {
-            log.error("对象 [" + objectPrefix + objectPath + "] 已存在");
+            log.error("对象 [" + path + "] 已存在");
             oss.shutdown();
             return false;
         }
@@ -149,8 +153,9 @@ public class AliossModel implements ObjectCloudStorage {
     @Override
     public boolean pudAppendableObject(String objectPath, byte[] content) {
         OSS oss = getOss();
-        if (!oss.doesObjectExist(bucket, objectPrefix + objectPath)) {
-            AppendObjectRequest appendObjectRequest = new AppendObjectRequest(bucket, objectPrefix + objectPath, new ByteArrayInputStream(content));
+        String path = getFormatObjectPath(objectPath);
+        if (!oss.doesObjectExist(bucket, path)) {
+            AppendObjectRequest appendObjectRequest = new AppendObjectRequest(bucket, path, new ByteArrayInputStream(content));
             appendObjectRequest.setPosition(0L);
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setHeader(OSSHeaders.CONTENT_TYPE, "application/octet-stream");
@@ -158,13 +163,13 @@ public class AliossModel implements ObjectCloudStorage {
             boolean isSuccessful = oss.appendObject(appendObjectRequest).getResponse().isSuccessful();
             oss.shutdown();
             if (!isSuccessful) {
-                log.error("对象 [" + objectPrefix + objectPath + "] 上传失败");
+                log.error("对象 [" + path + "] 上传失败");
             } else {
-                log.debug("对象 [" + objectPrefix + objectPath + "] 上传成功");
+                log.debug("对象 [" + path + "] 上传成功");
             }
             return isSuccessful;
         } else {
-            log.error("对象 [" + objectPrefix + objectPath + "] 已存在");
+            log.error("对象 [" + path + "] 已存在");
             oss.shutdown();
             return false;
         }
@@ -173,30 +178,31 @@ public class AliossModel implements ObjectCloudStorage {
     @Override
     public boolean appendObject(String objectPath, byte[] content) {
         OSS oss = getOss();
-        if (oss.doesObjectExist(bucket, objectPrefix + objectPath)) {
-            HeadObjectRequest request = new HeadObjectRequest(bucket, objectPrefix + objectPath);
+        String path = getFormatObjectPath(objectPath);
+        if (oss.doesObjectExist(bucket, path)) {
+            HeadObjectRequest request = new HeadObjectRequest(bucket, path);
             String objectType = oss.headObject(request).getObjectType();
             //noinspection AlibabaUndefineMagicConstant
             if ("Appendable".equals(objectType)) {
-                AppendObjectRequest appendObjectRequest = new AppendObjectRequest(bucket, objectPrefix + objectPath, new ByteArrayInputStream(content));
+                AppendObjectRequest appendObjectRequest = new AppendObjectRequest(bucket, path, new ByteArrayInputStream(content));
                 long contentLength = oss.headObject(request).getContentLength();
                 appendObjectRequest.setPosition(contentLength);
                 appendObjectRequest.setInputStream(new ByteArrayInputStream(content));
                 boolean isSuccessful = oss.appendObject(appendObjectRequest).getResponse().isSuccessful();
                 oss.shutdown();
                 if (!isSuccessful) {
-                    log.error("对象 [" + objectPrefix + objectPath + "] 追加上传失败");
+                    log.error("对象 [" + path + "] 追加上传失败");
                 } else {
-                    log.debug("对象 [" + objectPrefix + objectPath + "] 追加上传成功 AppendLength  -> " + content.length);
+                    log.debug("对象 [" + path + "] 追加上传成功 AppendLength  -> " + content.length);
                 }
                 return isSuccessful;
             } else {
-                log.error("对象 [" + objectPrefix + objectPath + "] 类型错误 " + objectType + " ,追加失败");
+                log.error("对象 [" + path + "] 类型错误 " + objectType + " ,追加失败");
             }
             oss.shutdown();
             return true;
         } else {
-            log.error("对象 [" + objectPrefix + objectPath + "] 不存在");
+            log.error("对象 [" + path + "] 不存在");
             oss.shutdown();
             return false;
         }
@@ -222,23 +228,25 @@ public class AliossModel implements ObjectCloudStorage {
             log.error("目标对象名称错误");
             return false;
         }
-        if (!oss.doesObjectExist(bucket, objectPrefix + sourceObjectPath)) {
-            log.error("源对象 [" + objectPrefix + sourceObjectPath + "] 不存在");
+        String sourcePath = getFormatObjectPath(sourceObjectPath);
+        String targetPath = getFormatObjectPath(targetObjectPath);
+        if (!oss.doesObjectExist(bucket, sourcePath)) {
+            log.error("源对象 [" + sourcePath + "] 不存在");
             return false;
         }
         if (isCover) {
-            oss.copyObject(bucket, objectPrefix + sourceObjectPath, bucket, objectPrefix + targetObjectPath);
+            oss.copyObject(bucket, sourcePath, bucket, targetPath);
             oss.shutdown();
-            log.debug("源对象 [" + objectPrefix + sourceObjectPath + "] -> " + "目标对象 [" + objectPrefix + targetObjectPath + "] 复制成功");
+            log.debug("源对象 [" + sourcePath + "] -> " + "目标对象 [" + targetPath + "] 复制成功");
             return true;
         } else {
-            if (!oss.doesObjectExist(bucket, objectPrefix + targetObjectPath)) {
-                oss.copyObject(bucket, objectPrefix + sourceObjectPath, bucket, objectPrefix + targetObjectPath);
+            if (!oss.doesObjectExist(bucket, targetPath)) {
+                oss.copyObject(bucket, sourcePath, bucket, targetPath);
                 oss.shutdown();
-                log.debug("源对象 [" + objectPrefix + sourceObjectPath + "] -> " + "目标对象 [" + objectPrefix + targetObjectPath + "] 复制成功");
+                log.debug("源对象 [" + sourcePath + "] -> " + "目标对象 [" + targetPath + "] 复制成功");
                 return true;
             } else {
-                log.error("目标对象 [" + objectPrefix + targetObjectPath + "] 已存在");
+                log.error("目标对象 [" + targetPath + "] 已存在");
                 oss.shutdown();
                 return false;
             }
@@ -255,7 +263,10 @@ public class AliossModel implements ObjectCloudStorage {
             objectPath = objectPath.substring(1);
         }
         OSS oss = getOss();
-        String path = (objectPrefix + objectPath).replaceAll("/+", "/");
+        String path = getFormatObjectPath(objectPath);
+        if (path.startsWith("/")){
+            path = path.substring(1);
+        }
         if (oss.doesObjectExist(bucket, path)) {
             if (path.startsWith("/")){
                 path = path.substring(1);
@@ -303,13 +314,14 @@ public class AliossModel implements ObjectCloudStorage {
     @Override
     public boolean deleteObject(String objectPath) {
         OSS oss = getOss();
-        if (oss.doesObjectExist(bucket, objectPrefix + objectPath)) {
-            oss.deleteObject(bucket, objectPrefix + objectPath);
+        String path = getFormatObjectPath(objectPath);
+        if (oss.doesObjectExist(bucket, path)) {
+            oss.deleteObject(bucket, path);
             oss.shutdown();
-            log.debug("对象 [" + objectPrefix + objectPath + "] 已删除");
+            log.debug("对象 [" + path + "] 已删除");
             return true;
         } else {
-            log.error("对象 [" + objectPrefix + objectPath + "] 不存在");
+            log.error("对象 [" + path + "] 不存在");
             oss.shutdown();
             return false;
         }
@@ -327,7 +339,7 @@ public class AliossModel implements ObjectCloudStorage {
             return false;
         }
         OSS oss = getOss();
-        boolean exist = oss.doesObjectExist(bucket, objectPath);
+        boolean exist = oss.doesObjectExist(bucket, getFormatObjectPath(objectPath));
         oss.shutdown();
         return exist;
     }
@@ -342,7 +354,8 @@ public class AliossModel implements ObjectCloudStorage {
         if (objectPath == null || objectPath.trim().length() == 0) {
             return null;
         }
-        return aliossConfig.getResourceHost() + ("/"+ objectPrefix + objectPath).replaceAll("/+", "/");
+        final String formatObjectPath = getFormatObjectPath(objectPath);
+        return aliossConfig.getResourceHost() + ("/"+ formatObjectPath).replaceAll("/+", "/");
     }
 
     /**
@@ -381,6 +394,14 @@ public class AliossModel implements ObjectCloudStorage {
         oss.createBucket(createBucketRequest);
         oss.shutdown();
         return true;
+    }
+
+    private String getFormatObjectPath(String objectPath){
+        String path = (objectPrefix + objectPath).replaceAll("/+", "/");
+        if (path.startsWith("/")){
+            path = path.substring(1);
+        }
+        return path;
     }
 
     private void operateOss(OssOperator operator) {
