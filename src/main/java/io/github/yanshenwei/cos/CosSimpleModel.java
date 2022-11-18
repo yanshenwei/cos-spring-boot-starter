@@ -208,6 +208,17 @@ public class CosSimpleModel implements ObjectCloudStorage, ApplicationContextAwa
         return null;
     }
 
+    @Override
+    public CosObject getUrlObject(String objectUrl) {
+        if (aliossConfig.isEnable()) {
+            return aliossModel.getUrlObject(objectUrl);
+        }
+        if (minioConfig.isEnable()) {
+            return minioModel.getUrlObject(objectUrl);
+        }
+        return null;
+    }
+
     /**
      * 对象删除
      *
@@ -238,6 +249,66 @@ public class CosSimpleModel implements ObjectCloudStorage, ApplicationContextAwa
         }
         if (minioConfig.isEnable()) {
             return minioModel.isObjectExist(objectPath);
+        }
+        return false;
+    }
+
+    /**
+     * @param objectPath 对象路径
+     * @return
+     */
+    @Override
+    public String getObjectUrl(String objectPath) {
+        if (aliossConfig.isEnable()) {
+            return aliossModel.getObjectUrl(objectPath);
+        }
+        if (minioConfig.isEnable()) {
+            return minioModel.getObjectUrl(objectPath);
+        }
+        return null;
+    }
+
+    @Override
+    public String objectUrlToPath(String objectUrl) {
+        if (aliossConfig.isEnable()) {
+            return aliossModel.objectUrlToPath(objectUrl);
+        }
+        if (minioConfig.isEnable()) {
+            return minioModel.objectUrlToPath(objectUrl);
+        }
+        return null;
+    }
+
+    /**
+     * 数据桶是否存在
+     *
+     * @param bucketName 桶名称
+     * @return
+     */
+    @Override
+    public boolean isBucketExists(String bucketName) {
+        if (aliossConfig.isEnable()) {
+            return aliossModel.isBucketExists(bucketName);
+        }
+        if (minioConfig.isEnable()) {
+            return minioModel.isBucketExists(bucketName);
+        }
+        return false;
+    }
+
+    /**
+     * 数据桶是否存在
+     *
+     * @param bucketName 桶名称
+     * @return
+     */
+    @Override
+    public boolean createBucket(String bucketName) {
+        if (aliossConfig.isEnable()) {
+            return aliossModel.createBucket(bucketName);
+        }
+        if (minioConfig.isEnable()) {
+            return minioModel.createBucket(bucketName);
         }
         return false;
     }

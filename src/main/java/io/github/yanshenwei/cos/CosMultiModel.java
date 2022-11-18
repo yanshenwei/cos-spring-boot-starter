@@ -252,6 +252,36 @@ public class CosMultiModel implements ObjectCloudStorage, ApplicationContextAwar
         return null;
     }
 
+    @Override
+    public CosObject getUrlObject(String objectUrl) {
+        if (aliossConfig.isEnable() && !minioConfig.isEnable()) {
+            return aliossModel.getUrlObject(objectUrl);
+        }
+        if (minioConfig.isEnable() && !aliossConfig.isEnable()) {
+            return minioModel.getUrlObject(objectUrl);
+        }
+        if (aliossConfig.isEnable() && minioConfig.isEnable()) {
+            final CosObject aliossModelObject = aliossModel.getUrlObject(objectUrl);
+            return aliossModelObject.getInputStream() != null ? aliossModelObject : minioModel.getUrlObject(objectUrl);
+        }
+        return null;
+    }
+
+    @Override
+    public String objectUrlToPath(String objectUrl) {
+        if (aliossConfig.isEnable() && !minioConfig.isEnable()) {
+            return aliossModel.objectUrlToPath(objectUrl);
+        }
+        if (minioConfig.isEnable() && !aliossConfig.isEnable()) {
+            return minioModel.objectUrlToPath(objectUrl);
+        }
+        if (aliossConfig.isEnable() && minioConfig.isEnable()) {
+            return objectUrl.startsWith(aliossConfig.getResourceHost()) ?
+                    aliossModel.objectUrlToPath(objectUrl) : minioModel.objectUrlToPath(objectUrl);
+        }
+        return null;
+    }
+
     /**
      * 对象删除
      *
@@ -291,6 +321,58 @@ public class CosMultiModel implements ObjectCloudStorage, ApplicationContextAwar
         if (aliossConfig.isEnable() && minioConfig.isEnable()) {
             final boolean result1 = aliossModel.isObjectExist(objectPath);
             final boolean result2 = minioModel.isObjectExist(objectPath);
+            return result1 && result2;
+        }
+        return false;
+    }
+
+    /**
+     * @param objectPath 对象路径
+     * @return
+     */
+    @Override
+    public String getObjectUrl(String objectPath) {
+        if (aliossConfig.isEnable() && !minioConfig.isEnable()) {
+            return aliossModel.getObjectUrl(objectPath);
+        }
+        if (minioConfig.isEnable() && !aliossConfig.isEnable()) {
+            return minioModel.getObjectUrl(objectPath);
+        }
+        if (aliossConfig.isEnable() && minioConfig.isEnable()) {
+            final String result1 = aliossModel.getObjectUrl(objectPath);
+            final String result2 = minioModel.getObjectUrl(objectPath);
+            return result1 == null ? result2 : result1;
+        }
+        return null;
+    }
+
+    @Override
+    public boolean isBucketExists(String bucketName) {
+        if (aliossConfig.isEnable() && !minioConfig.isEnable()) {
+            return aliossModel.isBucketExists(bucketName);
+        }
+        if (minioConfig.isEnable() && !aliossConfig.isEnable()) {
+            return minioModel.isBucketExists(bucketName);
+        }
+        if (aliossConfig.isEnable() && minioConfig.isEnable()) {
+            final boolean result1 = aliossModel.isBucketExists(bucketName);
+            final boolean result2 = minioModel.isBucketExists(bucketName);
+            return result1 && result2;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean createBucket(String bucketName) {
+        if (aliossConfig.isEnable() && !minioConfig.isEnable()) {
+            return aliossModel.createBucket(bucketName);
+        }
+        if (minioConfig.isEnable() && !aliossConfig.isEnable()) {
+            return minioModel.createBucket(bucketName);
+        }
+        if (aliossConfig.isEnable() && minioConfig.isEnable()) {
+            final boolean result1 = aliossModel.createBucket(bucketName);
+            final boolean result2 = minioModel.createBucket(bucketName);
             return result1 && result2;
         }
         return false;

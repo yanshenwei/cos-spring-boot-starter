@@ -41,6 +41,8 @@ public class MinioModel implements ObjectCloudStorage {
 
     private MinioClient minioClient;
 
+    private String resourceHost;
+
     private String bucket;
 
     private String objectPrefix;
@@ -54,19 +56,23 @@ public class MinioModel implements ObjectCloudStorage {
                 this.objectPrefix = objectDirPrefix + "/";
             } else //noinspection AlibabaUndefineMagicConstant
                 if ("/".equals(objectDirPrefix.trim())) {
-                this.objectPrefix = "";
-            } else {
-                this.objectPrefix = objectDirPrefix;
-            }
+                    this.objectPrefix = "";
+                } else {
+                    this.objectPrefix = objectDirPrefix;
+                }
         } else {
             this.objectPrefix = "";
         }
         log.debug("minio.object-dir-prefix: " + objectPrefix);
-        bucket = minioConfig.getBucket();
         minioClient = MinioClient.builder()
                 .endpoint(minioConfig.getEndpoint())
                 .credentials(minioConfig.getAccessKeyId(), minioConfig.getAccessKeySecret())
                 .build();
+        bucket = minioConfig.getBucket();
+        resourceHost = minioConfig.getResourceHost();
+        if (!isBucketExists(bucket)) {
+            createBucket(bucket);
+        }
     }
 
     public MinioClient getMinio() {
@@ -91,10 +97,10 @@ public class MinioModel implements ObjectCloudStorage {
                             .build());
             log.error("对象 [" + objectPrefix + objectPath + "] 已存在");
         } catch (ErrorResponseException | InternalException |
-                XmlParserException | InsufficientDataException |
-                InvalidKeyException | InvalidResponseException |
-                NoSuchAlgorithmException | ServerException |
-                IOException e) {
+                 XmlParserException | InsufficientDataException |
+                 InvalidKeyException | InvalidResponseException |
+                 NoSuchAlgorithmException | ServerException |
+                 IOException e) {
             if (FILE_NOT_EXIST.equals(e.getMessage())) {
                 final PutObjectArgs putObjectArgs;
                 try (InputStream inputStream = new FileInputStream(file)) {
@@ -107,10 +113,10 @@ public class MinioModel implements ObjectCloudStorage {
                     log.debug("对象 [" + objectPrefix + objectPath + "] 上传成功");
                     return true;
                 } catch (ErrorResponseException | InternalException |
-                        XmlParserException | InsufficientDataException |
-                        InvalidKeyException | InvalidResponseException |
-                        NoSuchAlgorithmException | ServerException |
-                        IOException e1) {
+                         XmlParserException | InsufficientDataException |
+                         InvalidKeyException | InvalidResponseException |
+                         NoSuchAlgorithmException | ServerException |
+                         IOException e1) {
                     log.error("对象 [" + objectPrefix + objectPath + "] 上传异常");
                 }
             } else {
@@ -139,10 +145,10 @@ public class MinioModel implements ObjectCloudStorage {
                             .build());
             log.error("对象 [" + objectPrefix + objectPath + "] 已存在");
         } catch (ErrorResponseException | InternalException |
-                XmlParserException | InsufficientDataException |
-                InvalidKeyException | InvalidResponseException |
-                NoSuchAlgorithmException | ServerException |
-                IOException e) {
+                 XmlParserException | InsufficientDataException |
+                 InvalidKeyException | InvalidResponseException |
+                 NoSuchAlgorithmException | ServerException |
+                 IOException e) {
             if (FILE_NOT_EXIST.equals(e.getMessage())) {
                 try {
                     final PutObjectArgs putObjectArgs = PutObjectArgs.builder().bucket(bucket)
@@ -154,10 +160,10 @@ public class MinioModel implements ObjectCloudStorage {
                     log.debug("对象 [" + objectPath + "] 上传成功");
                     return true;
                 } catch (ErrorResponseException | InternalException |
-                        XmlParserException | InsufficientDataException |
-                        InvalidKeyException | InvalidResponseException |
-                        NoSuchAlgorithmException | ServerException |
-                        IOException e1) {
+                         XmlParserException | InsufficientDataException |
+                         InvalidKeyException | InvalidResponseException |
+                         NoSuchAlgorithmException | ServerException |
+                         IOException e1) {
                     log.error("对象 [" + objectPrefix + objectPath + "] 上传异常");
                 }
             } else {
@@ -186,10 +192,10 @@ public class MinioModel implements ObjectCloudStorage {
             log.error("对象 [" + objectPrefix + objectPath + "] 已存在");
             return false;
         } catch (ErrorResponseException | InternalException |
-                XmlParserException | InsufficientDataException |
-                InvalidKeyException | InvalidResponseException |
-                NoSuchAlgorithmException | ServerException |
-                IOException e) {
+                 XmlParserException | InsufficientDataException |
+                 InvalidKeyException | InvalidResponseException |
+                 NoSuchAlgorithmException | ServerException |
+                 IOException e) {
             if (FILE_NOT_EXIST.equals(e.getMessage())) {
                 try {
                     InputStream inputStream = new ByteArrayInputStream(content);
@@ -202,10 +208,10 @@ public class MinioModel implements ObjectCloudStorage {
                     log.debug("对象 [" + objectPrefix + objectPath + "] 上传成功");
                     return true;
                 } catch (ErrorResponseException | InternalException |
-                        XmlParserException | InsufficientDataException |
-                        InvalidKeyException | InvalidResponseException |
-                        NoSuchAlgorithmException | ServerException |
-                        IOException e1) {
+                         XmlParserException | InsufficientDataException |
+                         InvalidKeyException | InvalidResponseException |
+                         NoSuchAlgorithmException | ServerException |
+                         IOException e1) {
                     log.error("对象 [" + objectPrefix + objectPath + "] 上传异常");
                 }
             } else {
@@ -234,10 +240,10 @@ public class MinioModel implements ObjectCloudStorage {
                             .build());
             log.error("对象 [" + objectPrefix + objectPath + "] 已存在");
         } catch (ErrorResponseException | InternalException |
-                XmlParserException | InsufficientDataException |
-                InvalidKeyException | InvalidResponseException |
-                NoSuchAlgorithmException | ServerException |
-                IOException e) {
+                 XmlParserException | InsufficientDataException |
+                 InvalidKeyException | InvalidResponseException |
+                 NoSuchAlgorithmException | ServerException |
+                 IOException e) {
             if (FILE_NOT_EXIST.equals(e.getMessage())) {
                 try {
                     InputStream inputStream = new ByteArrayInputStream(content);
@@ -250,10 +256,10 @@ public class MinioModel implements ObjectCloudStorage {
                     log.debug("对象 [" + objectPath + "] 上传成功");
                     return true;
                 } catch (ErrorResponseException | InternalException |
-                        XmlParserException | InsufficientDataException |
-                        InvalidKeyException | InvalidResponseException |
-                        NoSuchAlgorithmException | ServerException |
-                        IOException e1) {
+                         XmlParserException | InsufficientDataException |
+                         InvalidKeyException | InvalidResponseException |
+                         NoSuchAlgorithmException | ServerException |
+                         IOException e1) {
                     log.error("对象 [" + objectPath + "] 上传异常");
                 }
             } else {
@@ -307,10 +313,10 @@ public class MinioModel implements ObjectCloudStorage {
                 log.debug("对象 [" + objectPrefix + objectPath + "] 追加成功 Length " + oldLength + " -> " + bytes.length);
                 return true;
             } catch (ErrorResponseException | InternalException |
-                    XmlParserException | InsufficientDataException |
-                    InvalidKeyException | InvalidResponseException |
-                    NoSuchAlgorithmException | ServerException |
-                    IOException e) {
+                     XmlParserException | InsufficientDataException |
+                     InvalidKeyException | InvalidResponseException |
+                     NoSuchAlgorithmException | ServerException |
+                     IOException e) {
                 e.printStackTrace();
                 log.error("对象 [" + objectPrefix + objectPath + "] 追加异常");
             }
@@ -365,10 +371,10 @@ public class MinioModel implements ObjectCloudStorage {
             log.debug("源对象 [" + sourceObject + "] -> " + "目标对象 [" + targetObject + "] 复制成功");
             return true;
         } catch (ErrorResponseException | InternalException |
-                XmlParserException | InsufficientDataException |
-                InvalidKeyException | InvalidResponseException |
-                NoSuchAlgorithmException | ServerException |
-                IOException e1) {
+                 XmlParserException | InsufficientDataException |
+                 InvalidKeyException | InvalidResponseException |
+                 NoSuchAlgorithmException | ServerException |
+                 IOException e1) {
             if (KEY_NOT_EXIST.equals(e1.getMessage())) {
                 log.error("源对象 [" + sourceObject + "] 不存在");
             } else {
@@ -386,11 +392,18 @@ public class MinioModel implements ObjectCloudStorage {
      */
     @Override
     public CosObject getObject(String objectPath) {
+        if (objectPath == null){
+            return null;
+        }
+        String path = (objectPrefix + objectPath).replaceAll("/+", "/");
+        if (!path.startsWith("/")){
+            path = "/" + path;
+        }
         try {
             final GetObjectResponse object = minioClient.getObject(
                     GetObjectArgs.builder()
                             .bucket(bucket)
-                            .object(objectPrefix + objectPath)
+                            .object(path)
                             .build());
             final CosObject cosObject = new CosObject();
             cosObject.setInputStream(object);
@@ -398,20 +411,46 @@ public class MinioModel implements ObjectCloudStorage {
             final String l = object.headers().get("Content-Length");
             final String c = object.headers().get("Content-Type");
             if (l == null) {
-                log.error("对象 [" + objectPrefix + objectPath + "] 元数据缺少文件长度信息");
+                log.error("对象 [" + path + "] 元数据缺少文件长度信息");
             }
             cosObject.setContentLength(l != null ? Long.parseLong(l) : null);
             cosObject.setContentType(c);
-            log.debug("对象 [" + objectPrefix + objectPath + "] 获取成功");
+            log.debug("对象 [" + path + "] 获取成功");
             return cosObject;
         } catch (ErrorResponseException | InternalException |
-                XmlParserException | InsufficientDataException |
-                InvalidKeyException | InvalidResponseException |
-                NoSuchAlgorithmException | ServerException |
-                IOException e) {
-            log.error("对象 [" + objectPrefix + objectPath + "] 获取失败");
+                 XmlParserException | InsufficientDataException |
+                 InvalidKeyException | InvalidResponseException |
+                 NoSuchAlgorithmException | ServerException |
+                 IOException e) {
+            log.error("对象 [" + path + "] 获取失败");
             return null;
         }
+    }
+
+    /**
+     * 获取对象(通过对象资源地址)
+     *
+     * @param objectUrl 资源对象地址
+     * @return 操作结果
+     */
+    @Override
+    public CosObject getUrlObject(String objectUrl) {
+        if (resourceHost == null) {
+            log.error("资源地址未设置");
+            return null;
+        }
+        if (objectUrl.length() == 0) {
+            return null;
+        }
+        if (objectUrl.startsWith(minioConfig.getResourceHost() + "/" + bucket)) {
+            final String objectPath = objectUrl.substring(
+                    resourceHost.length() +
+                    bucket.length() +
+                    objectPrefix.length() +
+                    (objectPrefix.length() > 0 ? 1 : 2));
+            return getObject(objectPath);
+        }
+        return null;
     }
 
     /**
@@ -428,10 +467,10 @@ public class MinioModel implements ObjectCloudStorage {
             log.debug("对象 [" + objectPrefix + objectPath + "] 删除成功");
             return true;
         } catch (ErrorResponseException | InternalException |
-                XmlParserException | InsufficientDataException |
-                InvalidKeyException | InvalidResponseException |
-                NoSuchAlgorithmException | ServerException |
-                IOException e) {
+                 XmlParserException | InsufficientDataException |
+                 InvalidKeyException | InvalidResponseException |
+                 NoSuchAlgorithmException | ServerException |
+                 IOException e) {
             e.printStackTrace();
             log.error("对象 [" + objectPrefix + objectPath + "] 删除失败");
             return false;
@@ -454,10 +493,10 @@ public class MinioModel implements ObjectCloudStorage {
                             .build());
             return true;
         } catch (ErrorResponseException | InternalException |
-                XmlParserException | InsufficientDataException |
-                InvalidKeyException | InvalidResponseException |
-                NoSuchAlgorithmException | ServerException |
-                IOException e) {
+                 XmlParserException | InsufficientDataException |
+                 InvalidKeyException | InvalidResponseException |
+                 NoSuchAlgorithmException | ServerException |
+                 IOException e) {
             if (FILE_NOT_EXIST.equals(e.getMessage())) {
                 return false;
             } else {
@@ -465,6 +504,80 @@ public class MinioModel implements ObjectCloudStorage {
             }
         }
         return false;
+    }
+
+    /**
+     * 获取对象 url
+     *
+     * @param objectPath 对象路径
+     * @return
+     */
+    @Override
+    public String getObjectUrl(String objectPath) {
+        if (objectPath == null || objectPath.trim().length() == 0) {
+            return null;
+        }
+        return minioConfig.getResourceHost() + ("/" + minioConfig.getBucket() + "/" + objectPrefix + objectPath).replaceAll("/+", "/");
+    }
+
+    @Override
+    public String objectUrlToPath(String url) {
+        if (url == null || url.trim().length() < (minioConfig.getResourceHost().length() + minioConfig.getBucket().length() + 1)) {
+            return url;
+        }
+        return url.replace(minioConfig.getResourceHost() + "/", "").replace(minioConfig.getBucket(), "");
+    }
+
+    /**
+     * 数据桶是否存在
+     *
+     * @param bucketName 桶名称
+     * @return
+     */
+    @Override
+    public boolean isBucketExists(String bucketName) {
+        boolean found;
+        try {
+            found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+        } catch (ErrorResponseException | InternalException |
+                 XmlParserException | InsufficientDataException |
+                 InvalidKeyException | InvalidResponseException |
+                 NoSuchAlgorithmException | ServerException |
+                 IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        if (found) {
+            log.debug("bucket [" + bucketName + "] 存在");
+        } else {
+            log.debug("bucket [" + bucketName + "] 不存在");
+        }
+        return found;
+    }
+
+    /**
+     * 创建数据桶
+     *
+     * @param bucketName 桶名称
+     * @return
+     */
+    @Override
+    public boolean createBucket(String bucketName) {
+        try {
+            minioClient.makeBucket(
+                    MakeBucketArgs.builder()
+                            .bucket(bucketName)
+                            .build());
+            log.debug("bucket [" + bucketName + "] 创建成功");
+            return true;
+        } catch (ErrorResponseException | InternalException |
+                 XmlParserException | InsufficientDataException |
+                 InvalidKeyException | InvalidResponseException |
+                 NoSuchAlgorithmException | ServerException |
+                 IOException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     private void operateMinio(MinioOperator operator) {

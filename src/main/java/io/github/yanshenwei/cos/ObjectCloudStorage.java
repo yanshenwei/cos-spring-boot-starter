@@ -1,7 +1,10 @@
 package io.github.yanshenwei.cos;
 
+import io.minio.credentials.AssumeRoleProvider;
+
 import java.io.File;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 
 /**********************************
  * @Author YSW
@@ -96,11 +99,20 @@ public interface ObjectCloudStorage {
     }
 
     /**
-     * 对象获取
+     * 对象获取(通过对象路径)
      * @param objectPath 对象存储路径
      * @return 操作结果
      */
     default CosObject getObject(String objectPath) {
+        return null;
+    }
+
+    /**
+     * 获取对象(通过对象资源地址)
+     * @param objectUrl 资源对象地址
+     * @return 操作结果
+     */
+    default CosObject getUrlObject(String objectUrl) {
         return null;
     }
 
@@ -120,6 +132,46 @@ public interface ObjectCloudStorage {
      * @return
      */
     default boolean isObjectExist(String objectPath) {
+        return false;
+    }
+
+    /**
+     * 获取对象资源地址
+     *
+     * @param objectPath 对象路径
+     * @return
+     */
+    default String getObjectUrl(String objectPath) {
+        return null;
+    }
+
+    /**
+     * 获取对象路径
+     *
+     * @param objectUrl 对象资源地址
+     * @return
+     */
+    default String objectUrlToPath(String objectUrl) {
+        return null;
+    }
+
+    /**
+     * 数据桶是否存在
+     *
+     * @param bucketName 桶名称
+     * @return
+     */
+    default boolean isBucketExists(String bucketName){
+        return false;
+    }
+
+    /**
+     * 数据桶是否存在
+     *
+     * @param bucketName 桶名称
+     * @return
+     */
+    default boolean createBucket(String bucketName){
         return false;
     }
 }

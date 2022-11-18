@@ -1,10 +1,10 @@
 package io.github.yanshenwei.cos;
 
-import io.github.yanshenwei.cos.config.CosConstants;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.internal.OSSHeaders;
 import com.aliyun.oss.model.*;
+import io.github.yanshenwei.cos.config.CosConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -32,6 +32,10 @@ public class AliossModel implements ObjectCloudStorage {
     @Resource
     private CosConstants.AliossConfig aliossConfig;
 
+    private String endpoint;
+
+    private String resourceHost;
+
     private String bucket;
 
     private String objectPrefix;
@@ -45,15 +49,20 @@ public class AliossModel implements ObjectCloudStorage {
                 this.objectPrefix = objectDirPrefix + "/";
             } else //noinspection AlibabaUndefineMagicConstant
                 if ("/".equals(objectDirPrefix.trim())) {
-                this.objectPrefix = "";
-            } else {
-                this.objectPrefix = objectDirPrefix;
-            }
+                    this.objectPrefix = "";
+                } else {
+                    this.objectPrefix = objectDirPrefix;
+                }
         } else {
             this.objectPrefix = "";
         }
-        this.bucket = aliossConfig.getBucket();
         log.debug("oss.object-dir-prefix: " + objectPrefix);
+        bucket = aliossConfig.getBucket();
+        resourceHost = aliossConfig.getResourceHost();
+        endpoint = aliossConfig.getEndpoint();
+        if (!isBucketExists(bucket)) {
+            createBucket(bucket);
+        }
     }
 
     public OSS getOss() {
@@ -177,7 +186,7 @@ public class AliossModel implements ObjectCloudStorage {
                 oss.shutdown();
                 if (!isSuccessful) {
                     log.error("对象 [" + objectPrefix + objectPath + "] 追加上传失败");
-                }else {
+                } else {
                     log.debug("对象 [" + objectPrefix + objectPath + "] 追加上传成功 AppendLength  -> " + content.length);
                 }
                 return isSuccessful;
@@ -220,13 +229,13 @@ public class AliossModel implements ObjectCloudStorage {
         if (isCover) {
             oss.copyObject(bucket, objectPrefix + sourceObjectPath, bucket, objectPrefix + targetObjectPath);
             oss.shutdown();
-            log.debug("源对象 ["+objectPrefix + sourceObjectPath+"] -> "+"目标对象 [" + objectPrefix + targetObjectPath + "] 复制成功");
+            log.debug("源对象 [" + objectPrefix + sourceObjectPath + "] -> " + "目标对象 [" + objectPrefix + targetObjectPath + "] 复制成功");
             return true;
         } else {
             if (!oss.doesObjectExist(bucket, objectPrefix + targetObjectPath)) {
                 oss.copyObject(bucket, objectPrefix + sourceObjectPath, bucket, objectPrefix + targetObjectPath);
                 oss.shutdown();
-                log.debug("源对象 ["+objectPrefix + sourceObjectPath+"] -> "+"目标对象 [" + objectPrefix + targetObjectPath + "] 复制成功");
+                log.debug("源对象 [" + objectPrefix + sourceObjectPath + "] -> " + "目标对象 [" + objectPrefix + targetObjectPath + "] 复制成功");
                 return true;
             } else {
                 log.error("目标对象 [" + objectPrefix + targetObjectPath + "] 已存在");
@@ -239,24 +248,56 @@ public class AliossModel implements ObjectCloudStorage {
     @Override
     public CosObject getObject(String objectPath) {
         //noinspection AlibabaUndefineMagicConstant
-        if (objectPath.length() == 0 || objectPath.startsWith("/")) {
+        if (objectPath.length() == 0) {
             return null;
         }
+        if (objectPath.startsWith("/")){
+            objectPath = objectPath.substring(1);
+        }
         OSS oss = getOss();
-        if (oss.doesObjectExist(bucket, objectPrefix + objectPath)) {
-            final OSSObject object = oss.getObject(bucket, objectPrefix + objectPath);
+        String path = (objectPrefix + objectPath).replaceAll("/+", "/");
+        if (oss.doesObjectExist(bucket, path)) {
+            if (path.startsWith("/")){
+                path = path.substring(1);
+            }
+            final OSSObject object = oss.getObject(bucket, path);
             final CosObject cosObject = new CosObject();
             cosObject.setInputStream(object.getObjectContent());
-            cosObject.setPath(objectPrefix + objectPath);
+            cosObject.setPath(path);
             cosObject.setContentLength(object.getObjectMetadata().getContentLength());
             cosObject.setContentType(object.getObjectMetadata().getContentType());
-            log.debug("对象 [" + objectPrefix + objectPath + "] 获取成功");
+            log.debug("对象 [" + path + "] 获取成功");
             return cosObject;
         } else {
-            log.error("对象 [" + objectPrefix + objectPath + "] 不存在");
+            log.error("对象 [" + path + "] 不存在");
             oss.shutdown();
             return null;
         }
+    }
+
+
+    /**
+     * 获取对象(通过对象资源地址)
+     * @param objectUrl 资源对象地址
+     * @return 操作结果
+     */
+    @Override
+    public CosObject getUrlObject(String objectUrl) {
+        if (resourceHost == null){
+            log.error("资源地址未设置");
+            return null;
+        }
+        if (objectUrl.length() == 0){
+            return null;
+        }
+        if (objectUrl.startsWith(aliossConfig.getResourceHost())){
+            final String objectPath = objectUrl.substring(
+                    resourceHost.length() +
+                            objectPrefix.length() +
+                            (objectPrefix.length() > 0 ? 1 : 2));
+            return getObject(objectPath);
+        }
+        return null;
     }
 
     @Override
@@ -289,6 +330,57 @@ public class AliossModel implements ObjectCloudStorage {
         boolean exist = oss.doesObjectExist(bucket, objectPath);
         oss.shutdown();
         return exist;
+    }
+
+    /**
+     * 获取对象 url
+     * @param objectPath 对象路径
+     * @return
+     */
+    @Override
+    public String getObjectUrl(String objectPath) {
+        if (objectPath == null || objectPath.trim().length() == 0) {
+            return null;
+        }
+        return aliossConfig.getResourceHost() + ("/"+ objectPrefix + objectPath).replaceAll("/+", "/");
+    }
+
+    /**
+     * 获取对象路径
+     *
+     * @param url 对象资源地址
+     * @return
+     */
+    @Override
+    public String objectUrlToPath(String url) {
+        if (url == null || url.trim().length() < (aliossConfig.getResourceHost().length() + 1)) {
+            return url;
+        }
+        return url.replace(aliossConfig.getResourceHost(), "");
+    }
+
+    @Override
+    public boolean isBucketExists(String bucketName) {
+        OSS oss = getOss();
+        final GenericRequest genericRequest = new GenericRequest();
+        genericRequest.setEndpoint(endpoint);
+        boolean exist = oss.doesBucketExist(bucketName);
+        if (exist){
+            log.debug("bucket ["+bucketName+"] 已存在");
+        }
+        oss.shutdown();
+        return exist;
+    }
+
+    @Override
+    public boolean createBucket(String bucketName) {
+        OSS oss = getOss();
+        final CreateBucketRequest createBucketRequest = new CreateBucketRequest(bucketName);
+        createBucketRequest.setEndpoint(endpoint);
+        createBucketRequest.setCannedACL(CannedAccessControlList.PublicRead);
+        oss.createBucket(createBucketRequest);
+        oss.shutdown();
+        return true;
     }
 
     private void operateOss(OssOperator operator) {

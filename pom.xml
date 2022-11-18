@@ -6,16 +6,11 @@
     <groupId>io.github.yanshenwei</groupId>
     <artifactId>cos-spring-boot-starter</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <name>cos-spring-boot-starter</name>
     <url>https://github.com/yanshenwei/cos-spring-boot-starter</url>
     <description>
         Third Party Cloud Object Storage
-        2022-11-10 v1.0.0
-            alioss v3.15.2
-            minio  v8.4.5
-        2022-11-12 v1.0.1
-        2022-11-14 v1.0.2
     </description>
 
     <properties>
@@ -72,7 +67,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.10.0</version>
+            <version>4.9.3</version>
         </dependency>
 
         <dependency>
